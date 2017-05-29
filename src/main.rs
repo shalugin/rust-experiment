@@ -74,10 +74,10 @@ struct XPool<'a> {
 }
 
 #[get("/")]
-fn index(pool: rocket::State<NamePool>) -> /*JSON<Person>*/String {
+fn index(pool: rocket::State<NamePool>) -> JSON<Person>/*String*/ {
     let person = pool.random_name();
-    //    JSON(person)
-    serde_json::to_string(&person).unwrap()
+    JSON(person)
+    //    serde_json::to_string(&person).unwrap()
     //    let serialized = serde_json::to_string(&point).unwrap();
     //    JSON(person)
 }
