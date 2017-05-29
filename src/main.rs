@@ -15,7 +15,6 @@ use rocket_contrib::JSON;
 
 use std::collections::HashSet;
 
-use rand::distributions::{IndependentSample, Range};
 use rand::Rng;
 
 #[derive(Serialize, Debug, Clone, Copy)]
@@ -49,10 +48,8 @@ struct NamePool {
 impl NamePool {
     fn random_name(&self) -> Person {
         fn random_value(vec: &Vec<String>) -> &String {
-            let between = Range::new(0, vec.len() - 1);
-            let mut rng = rand::thread_rng();
-            let index = between.ind_sample(&mut rng);
-            &vec[index]
+            // todo unwrap_or
+            rand::thread_rng().choose(vec).unwrap()
         }
 
         let sex: Sex = rand::random();
