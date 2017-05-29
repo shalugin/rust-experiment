@@ -2,23 +2,38 @@
 #![plugin(rocket_codegen)]
 
 extern crate rocket;
-extern crate serde_json;
-#[macro_use]
 extern crate rocket_contrib;
+
 #[macro_use]
 extern crate serde_derive;
-
-use rocket_contrib::JSON;
+extern crate serde_json;
 
 extern crate file;
 extern crate rand;
 
+use rocket_contrib::JSON;
+
 use std::collections::HashSet;
+
 use rand::distributions::{IndependentSample, Range};
+use rand::Rng;
+
+#[derive(Serialize, Debug, Clone, Copy)]
+enum Sex {
+    Male,
+    Female
+}
+
+impl rand::Rand for Sex {
+    fn rand<R: Rng>(rng: &mut R) -> Self {
+        let variants = [Sex::Male, Sex::Female];
+        *rng.choose(&variants).unwrap()
+    }
+}
 
 #[derive(Serialize, Debug)]
 struct Person {
-    sex: bool,
+    sex: Sex,
     first_name: String,
     second_name: String,
     last_name: String
@@ -40,11 +55,10 @@ impl NamePool {
             &vec[index]
         }
 
-        let sex: bool = rand::random();
-        let first_name = if sex {
-            random_value(&self.male)
-        } else {
-            random_value(&self.female)
+        let sex: Sex = rand::random();
+        let first_name = match sex {
+            Sex::Male => random_value(&self.male),
+            Sex::Female => random_value(&self.female)
         };
 
         let person = Person {
@@ -59,52 +73,11 @@ impl NamePool {
     }
 }
 
-struct NameGen {
-    name_pool: NamePool,
-    female_range: Range<usize>,
-    //    male_range: Range<usize>,
-    //    surname_range: Range<usize>,
-    rng: rand::ThreadRng
-}
-
-struct XPool<'a> {
-    names: &'a Vec<String>,
-    range: Range<usize>,
-    rng: rand::ThreadRng,
-}
-
 #[get("/")]
-fn index(pool: rocket::State<NamePool>) -> JSON<Person>/*String*/ {
+fn index(pool: rocket::State<NamePool>) -> JSON<Person> {
     let person = pool.random_name();
     JSON(person)
-    //    serde_json::to_string(&person).unwrap()
-    //    let serialized = serde_json::to_string(&point).unwrap();
-    //    JSON(person)
 }
-
-//fn x() -> XPool<'static> {
-//    let female_names = &merge_names(&[
-//        "src/names/female-names-v1-14376.txt",
-//        "src/names/female-names-v2-16673.txt",
-//    ]);
-//    let len = female_names.len();
-//
-//    let vv = XPool {
-//        names: female_names,
-//        range: Range::new(0, len),
-//        rng: rand::thread_rng()
-//    };
-//    //
-//    //
-//    //    let pool = &load_name_pool();
-//    //
-//    //    NameGen {
-//    //        name_pool: *pool,
-//    //        female_range: Range::new(0, pool.female.len()),
-//    //        rng: rand::thread_rng()
-//    //    }
-//    vv
-//}
 
 fn load_name_pool() -> NamePool {
     let female_names = merge_names(&[
@@ -150,9 +123,7 @@ fn load_from_file(filename: &str) -> HashSet<String> {
     names
 }
 
-
 fn main() {
-    //    x();
     let pool = load_name_pool();
     rocket::ignite()
         .manage(pool)
