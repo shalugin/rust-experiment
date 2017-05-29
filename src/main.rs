@@ -1,26 +1,27 @@
 #![feature(plugin)]
 #![plugin(rocket_codegen)]
 
-extern crate file;
 extern crate rocket;
+extern crate serde_json;
+#[macro_use]
+extern crate rocket_contrib;
+#[macro_use]
+extern crate serde_derive;
+
+use rocket_contrib::JSON;
+
+extern crate file;
 extern crate rand;
 
 use std::collections::HashSet;
 use rand::distributions::{IndependentSample, Range};
 
-#[derive(Debug)]
+#[derive(Serialize, Debug)]
 struct Person {
     sex: bool,
     first_name: String,
     second_name: String,
     last_name: String
-}
-
-impl std::fmt::Display for Person {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let sex_name = if self.sex { "male" } else { "female" };
-        write!(f, "({}, {} {} {})", sex_name, self.first_name, self.second_name, self.last_name)
-    }
 }
 
 #[derive(Debug)]
@@ -31,7 +32,7 @@ struct NamePool {
 }
 
 impl NamePool {
-    fn random_name(&self) -> String {
+    fn random_name(&self) -> Person {
         fn random_value(vec: &Vec<String>) -> &String {
             let between = Range::new(0, vec.len() - 1);
             let mut rng = rand::thread_rng();
@@ -53,7 +54,8 @@ impl NamePool {
             last_name: random_value(&self.surname).to_string()
         };
 
-        return format!("{}", person);
+        println!("{:?}", person);
+        person
     }
 }
 
@@ -72,8 +74,12 @@ struct XPool<'a> {
 }
 
 #[get("/")]
-fn index(pool: rocket::State<NamePool>) -> String {
-    pool.random_name()
+fn index(pool: rocket::State<NamePool>) -> /*JSON<Person>*/String {
+    let person = pool.random_name();
+    //    JSON(person)
+    serde_json::to_string(&person).unwrap()
+    //    let serialized = serde_json::to_string(&point).unwrap();
+    //    JSON(person)
 }
 
 //fn x() -> XPool<'static> {
@@ -146,7 +152,7 @@ fn load_from_file(filename: &str) -> HashSet<String> {
 
 
 fn main() {
-//    x();
+    //    x();
     let pool = load_name_pool();
     rocket::ignite()
         .manage(pool)
