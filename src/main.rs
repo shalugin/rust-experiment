@@ -12,8 +12,11 @@ extern crate file;
 extern crate rand;
 
 use rocket_contrib::JSON;
+use rocket::response::content::Content;
+use rocket::http::ContentType;
 
 use std::collections::HashSet;
+use std::str::FromStr;
 
 use rand::Rng;
 
@@ -76,6 +79,17 @@ fn index(pool: rocket::State<NamePool>) -> JSON<Person> {
     JSON(person)
 }
 
+fn json_workaround() -> ContentType {
+    ContentType::from_str("application/json; encoding=utf-8").unwrap()
+}
+
+#[get("/2")]
+fn index2(pool: rocket::State<NamePool>) -> Content<String> {
+    let person = pool.random_name();
+    let json = serde_json::to_string(&person).unwrap();
+    Content(json_workaround(), json)
+}
+
 fn load_name_pool() -> NamePool {
     let female_names = merge_names(&[
         "src/names/female-names-v1-14376.txt",
@@ -124,5 +138,5 @@ fn main() {
     let pool = load_name_pool();
     rocket::ignite()
         .manage(pool)
-        .mount("/", routes![index]).launch();
+        .mount("/", routes![index, index2]).launch();
 }
