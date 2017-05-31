@@ -138,6 +138,13 @@ fn main() {
 }
 
 mod patronymic {
+    fn is_vowel(letter: char) -> bool {
+        match letter {
+            'а' | 'е' | 'ё' | 'и' | 'о' | 'у' | 'ы' | 'э' | 'ю' | 'я' => true,
+            _ => false
+        }
+    }
+
     #[derive(Serialize, Debug, Clone, Copy, PartialEq)]
     pub enum Sex {
         Male,
@@ -145,7 +152,9 @@ mod patronymic {
     }
 
     /// http://zags.kurganobl.ru/obrazovanie_i_napisanie_otchestv.html
-    /// 	Отчества от мужских имен (русских и нерусских) в русском языке образуются по следующим правилам:
+    ///
+    /// Отчества от мужских имен (русских и нерусских) в русском языке образуются по следующим правилам:
+    ///
     /// 1. Если имя оканчивается на твёрдый согласный (кроме ж, ш, ч, щ, ц), добавляется -ович / овна:
     /// Александр + ович/овна, Иван + ович/овна, Гамзат + ович/овна.
     ///
@@ -197,8 +206,39 @@ mod patronymic {
     /// Например, если отец Игорь-Эдуард,а ребенка назвали Антон, в его документах пишется либо Антон Игоревич, либо Антон Эдуардович,
     /// либо Антон Игорь-Эдуардович, как родители сочтут более удобным.
     pub fn from_name(first_name: &str, sex: Sex) -> String {
+        fn last_two_letters(first_name: &str) -> (char, char) {
+            let mut name = first_name.to_owned();
+            let last = name.pop().unwrap();
+            let prev = name.pop().unwrap();
+            (last, prev)
+        }
+
+        fn concat_ending(name: &str, sex: Sex, male_end: &str, female_end: &str) -> String {
+            if sex == Sex::Male {
+                name.to_owned() + male_end
+            } else {
+                name.to_owned() + female_end
+            }
+        }
+
+        if first_name.len() >= 2 {
+            let (last, prev) = last_two_letters(first_name);
+            if is_vowel(last) && is_vowel(prev) {
+                return concat_ending(first_name, sex, "евич", "евна");
+                //                let ending = if sex == Sex::Male { "евич" } else { "евна" };
+                //                return first_name.to_owned() + ending;
+            }
+        }
+
         let mut name = first_name.to_owned();
         let last_letter = name.pop().unwrap();
+
+        if first_name.ends_with("аа")
+            || first_name.ends_with("ау")
+            || first_name.ends_with("еу")
+            || first_name.ends_with("ээ")
+            || first_name.ends_with("ии")
+            || first_name.ends_with("уу") {}
 
         let result = match last_letter {
             'б' | 'в' | 'г' | 'д' | 'р' | 'н' | 'т' => {
@@ -263,5 +303,20 @@ mod patronymic {
         // 4.
         test_name("Василько", "Василькович", "Васильковна");
         test_name("Отто", "Оттович", "Оттовна");
+        // 5. todo
+        //        test_name("Важа", "Важевич", "Важевна");
+        //        test_name("Гоча", "Гочевич", "Гочевна");
+        // 6.
+        // 7.
+        // 8.
+        // 9.
+        // 10.
+        // 11.
+        // 12.
+        // 13.
+        test_name("Бимбии", "Бимбииевич", "Бимбииевна");
+        test_name("Бобоо", "Бобооевич", "Бобооевна");
+        test_name("Бурбээ", "Бурбээевич", "Бурбээевна");
+        // 14. double name
     }
 }
