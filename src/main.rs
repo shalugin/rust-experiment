@@ -138,10 +138,29 @@ fn main() {
 }
 
 mod patronymic {
+    fn x () {
+//        'абвгдеёжзийклмнопрстуфхцчшщъыьэюя'
+    }
+
     fn is_vowel(letter: char) -> bool {
         match letter {
             'а' | 'е' | 'ё' | 'и' | 'о' | 'у' | 'ы' | 'э' | 'ю' | 'я' => true,
             _ => false
+        }
+    }
+
+    fn last_two_letters(first_name: &str) -> (char, char) {
+        let mut name = first_name.to_owned();
+        let last = name.pop().unwrap_or(' ');
+        let prev = name.pop().unwrap_or(' ');
+        (last, prev)
+    }
+
+    fn concat_ending(name: &str, sex: Sex, male_end: &str, female_end: &str) -> String {
+        if sex == Sex::Male {
+            name.to_owned() + male_end
+        } else {
+            name.to_owned() + female_end
         }
     }
 
@@ -206,27 +225,16 @@ mod patronymic {
     /// Например, если отец Игорь-Эдуард,а ребенка назвали Антон, в его документах пишется либо Антон Игоревич, либо Антон Эдуардович,
     /// либо Антон Игорь-Эдуардович, как родители сочтут более удобным.
     pub fn from_name(first_name: &str, sex: Sex) -> String {
-        fn last_two_letters(first_name: &str) -> (char, char) {
+        if first_name.ends_with("ея") || first_name.ends_with("ия") {
             let mut name = first_name.to_owned();
-            let last = name.pop().unwrap();
-            let prev = name.pop().unwrap();
-            (last, prev)
-        }
-
-        fn concat_ending(name: &str, sex: Sex, male_end: &str, female_end: &str) -> String {
-            if sex == Sex::Male {
-                name.to_owned() + male_end
-            } else {
-                name.to_owned() + female_end
-            }
+            name.pop();
+            return concat_ending(&name, sex, "евич", "евна");
         }
 
         if first_name.len() >= 2 {
             let (last, prev) = last_two_letters(first_name);
             if is_vowel(last) && is_vowel(prev) {
                 return concat_ending(first_name, sex, "евич", "евна");
-                //                let ending = if sex == Sex::Male { "евич" } else { "евна" };
-                //                return first_name.to_owned() + ending;
             }
         }
 
@@ -243,26 +251,21 @@ mod patronymic {
         let result = match last_letter {
             'б' | 'в' | 'г' | 'д' | 'р' | 'н' | 'т' => {
                 // todo что такое твёрдый согласный?
-                let ending = if sex == Sex::Male { "ович" } else { "овна" };
-                first_name.to_owned() + ending
+                concat_ending(&first_name, sex, "ович", "овна")
             }
             'й' => {
-                let ending = if sex == Sex::Male { "евич" } else { "евна" };
-                name.to_owned() + ending
+                concat_ending(&name, sex, "евич", "евна")
             }
             'ж' | 'ш' | 'ч' | 'щ' | 'ц' => {
-                let ending = if sex == Sex::Male { "евич" } else { "евна" };
-                first_name.to_owned() + ending
+                concat_ending(&first_name, sex, "евич", "евна")
             }
             'а' | 'у' | 'ы' | 'о' => {
                 match first_name {
                     "Аникита" | "Никита" | "Мина" | "Савва" | "Сила" | "Фока" => {
-                        let ending = if sex == Sex::Male { "ич" } else { "ична" };
-                        name.to_owned() + ending
+                        concat_ending(&name, sex, "ич", "ична")
                     }
                     _ => {
-                        let ending = if sex == Sex::Male { "ович" } else { "овна" };
-                        name.to_owned() + ending
+                        concat_ending(&name, sex, "ович", "овна")
                     }
                 }
             }
@@ -311,6 +314,9 @@ mod patronymic {
         // 8.
         // 9.
         // 10.
+        test_name("Менея", "Менеевич", "Менеевна");
+        test_name("Захария", "Захариевич", "Захариевна");
+
         // 11.
         // 12.
         // 13.
